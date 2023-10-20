@@ -65,6 +65,7 @@ def move(game_state: typing.Dict) -> typing.Dict:
   # TODO: Step 1 - Prevent your Battlesnake from moving out of bounds
   # board_width = game_state['board']['width']
   # board_height = game_state['board']['height']
+  
 
   # TODO: Step 2 - Prevent your Battlesnake from colliding with itself
   # my_body = game_state['you']['body']
