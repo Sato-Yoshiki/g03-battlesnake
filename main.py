@@ -80,6 +80,7 @@ def move(game_state: typing.Dict) -> typing.Dict:
 
   # TODO: Step 2 - Prevent your Battlesnake from colliding with itself
   # my_body = game_state['you']['body']
+  
 
   # TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
   # opponents = game_state['board']['snakes']
