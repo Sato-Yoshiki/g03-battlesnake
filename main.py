@@ -217,6 +217,22 @@ def move(game_state: typing.Dict) -> typing.Dict:
 
     if game_state["you"]["health"] >= 19:
         # 体力が19以上あるならそのまま外周を進む
+        next_my_head = my_head
+        if next_move == "up":
+            next_my_head = {"x": my_head["x"], "y": my_head["y"] + 1}
+        elif next_move == "down":
+            next_my_head = {"x": my_head["x"], "y": my_head["y"] - 1}
+        elif next_move == "right":
+            next_my_head = {"x": my_head["x"] + 1, "y": my_head["y"]}
+        else:
+            next_my_head = {"x": my_head["x"] - 1, "y": my_head["y"]}
+        if next_my_head in game_state["board"]["food"]:
+            new_safe_moves = []
+            for move in safe_moves:
+                if move != next_move:
+                    new_safe_moves.append(move)
+            if len(new_safe_moves) != 0:
+                next_move = random.choice(new_safe_moves)
         print(f"MOVE {game_state['turn']}: {next_move}")
         return {"move": next_move}
     else:
