@@ -1,204 +1,204 @@
-# Welcome to
-# __________         __    __  .__                               __
-# \______   \_____ _/  |__/  |_|  |   ____   ______ ____ _____  |  | __ ____
-#  |    |  _/\__  \\   __\   __\  | _/ __ \ /  ___//    \\__  \ |  |/ // __ \
-#  |    |   \ / __ \|  |  |  | |  |_\  ___/ \___ \|   |  \/ __ \|    <\  ___/
-#  |________/(______/__|  |__| |____/\_____>______>___|__(______/__|__\\_____>
-#
-# This file can be a nice home for your Battlesnake logic and helper functions.
-#
-# To get you started we've included code to prevent your Battlesnake from moving backwards.
-# For more info see docs.battlesnake.com
+#     //   ) )     //   ) )     //   ) )     //   / /     //   ) )     ___        ___   #
+#    //           //___/ /     //   / /     //   / /     //___/ /    //   ) )   //   ) )#
+#   //  ____     / ___ (      //   / /     //   / /     / ____ /    //   / /     __ / / #
+#  //    / /    //   | |     //   / /     //   / /     //          //   / /         ) ) #
+# ((____/ /    //    | |    ((___/ /     ((___/ /     //          ((___/ /    ((___/ /  #
 
 import random
 import typing
 
 
-# info is called when you create your Battlesnake on play.battlesnake.com
-# and controls your Battlesnake's appearance
-# TIP: If you open your Battlesnake URL in a browser you should see this data
 def info() -> typing.Dict:
-    print("INFO")
-    return {
-        "apiversion": "1",
-        "author": "g03",  # TODO: Your Battlesnake Username
-        "color": "#ffe4e1",  # TODO: Choose color
-        "head": "sand-worm",  # TODO: Choose head
-        "tail": "block-bum",  # TODO: Choose tail
-    }
+  print("INFO")
+  return {
+    "apiversion": "1",
+    "author": "g03",
+    "color": "#ffe4e1",
+    "head": "sand-worm",
+    "tail": "block-bum",
+  }
 
 
-# start is called when your Battlesnake begins a game
 def start(game_state: typing.Dict):
-    print("GAME START")
+  print("GAME START")
 
 
-# end is called when your Battlesnake finishes a game
 def end(game_state: typing.Dict):
-    print("GAME OVER\n")
+  print("GAME OVER\n")
 
 
-# move is called on every turn and returns your next move
-# Valid moves are "up", "down", "left", or "right"
-# See https://docs.battlesnake.com/api/example-move for available data
+# floodfill法（を応用した方法）による空白の数え上げ
+# 尻尾にアクセスできるときは50以上の数字が返ってくるがその大小は特に意味はない
+def floodfill(board, x, y, visited, my_tail):
+  if x < 0 or x >= 11 or y < 0 or y >= 11 or visited[x][y] or board[x][y] != 0:
+    if my_tail["x"] == x and my_tail["y"] == y:
+      return 50
+    else:
+      return 0
+  visited[x][y] = True
+  count = 1
+
+  count += floodfill(board, x + 1, y, visited, my_tail)
+  if count >= 50:
+    return count
+  count += floodfill(board, x - 1, y, visited, my_tail)
+  if count >= 50:
+    return count
+  count += floodfill(board, x, y + 1, visited, my_tail)
+  if count >= 50:
+    return count
+  count += floodfill(board, x, y - 1, visited, my_tail)
+  return count
+
+
 def move(game_state: typing.Dict) -> typing.Dict:
-    is_move_safe = {"up": True, "down": True, "left": True, "right": True}
+  # 消去法による安全な方向の絞り込み
+  is_move_safe = {"up": True, "down": True, "left": True, "right": True}
 
-    # We've included code to prevent your Battlesnake from moving backwards
-    my_head = game_state["you"]["body"][0]  # Coordinates of your head
-    my_neck = game_state["you"]["body"][1]  # Coordinates of your "neck"
+  my_head = game_state["you"]["body"][0]
+  my_neck = game_state["you"]["body"][1]
+  my_tail = game_state["you"]["body"][-1]
 
-    if my_neck["x"] < my_head["x"]:  # Neck is left of head, don't move left
-        is_move_safe["left"] = False
+  # 首がある方向には進めない
+  if my_neck["x"] < my_head["x"]:
+    is_move_safe["left"] = False
 
-    elif my_neck["x"] > my_head["x"]:  # Neck is right of head, don't move right
-        is_move_safe["right"] = False
+  elif my_neck["x"] > my_head["x"]:
+    is_move_safe["right"] = False
 
-    elif my_neck["y"] < my_head["y"]:  # Neck is below head, don't move down
-        is_move_safe["down"] = False
+  elif my_neck["y"] < my_head["y"]:
+    is_move_safe["down"] = False
 
-    elif my_neck["y"] > my_head["y"]:  # Neck is above head, don't move up
-        is_move_safe["up"] = False
+  elif my_neck["y"] > my_head["y"]:
+    is_move_safe["up"] = False
 
-    # TODO: Step 1 - Prevent your Battlesnake from moving out of bounds
-    board_width = game_state["board"]["width"]
-    board_height = game_state["board"]["height"]
+  # 盤面外に出るのを防ぐ
+  board_width = game_state["board"]["width"]
+  board_height = game_state["board"]["height"]
 
-    if my_head["x"] == 0:
-        is_move_safe["left"] = False
-    elif my_head["x"] == board_width - 1:
-        is_move_safe["right"] = False
-    if my_head["y"] == 0:
-        is_move_safe["down"] = False
-    elif my_head["y"] == board_height - 1:
-        is_move_safe["up"] = False
-    # TODO: Step 2 - Prevent your Battlesnake from colliding with itself
-    my_body = game_state["you"]["body"]
+  if my_head["x"] == 0:
+    is_move_safe["left"] = False
+  elif my_head["x"] == board_width - 1:
+    is_move_safe["right"] = False
+  if my_head["y"] == 0:
+    is_move_safe["down"] = False
+  elif my_head["y"] == board_height - 1:
+    is_move_safe["up"] = False
 
-    my_head_up = {"x": my_head["x"], "y": my_head["y"] + 1}
-    my_head_down = {"x": my_head["x"], "y": my_head["y"] - 1}
-    my_head_left = {"x": my_head["x"] - 1, "y": my_head["y"]}
-    my_head_right = {"x": my_head["x"] + 1, "y": my_head["y"]}
+  # 自分の体にぶつかる（一手先）のを防ぐ
+  my_body = game_state["you"]["body"]
 
-    # 上の確認
-    if is_move_safe["up"]:
-        if my_head_up in my_body[:-1]:
-            is_move_safe["up"] = False
+  my_head_up = {"x": my_head["x"], "y": my_head["y"] + 1}
+  my_head_down = {"x": my_head["x"], "y": my_head["y"] - 1}
+  my_head_left = {"x": my_head["x"] - 1, "y": my_head["y"]}
+  my_head_right = {"x": my_head["x"] + 1, "y": my_head["y"]}
 
-    # 下方向の確認
-    if is_move_safe["down"]:
-        if my_head_down in my_body[:-1]:
-            is_move_safe["down"] = False
+  # 頭の上のマスが自分の体（尻尾を除く）ではないか
+  if is_move_safe["up"]:
+    if my_head_up in my_body[:-1]:
+      is_move_safe["up"] = False
 
-    # 左方向の確認
-    if is_move_safe["left"]:
-        if my_head_left in my_body[:-1]:
-            is_move_safe["left"] = False
+  # 頭の下のマスが自分の体（尻尾を除く）ではないか
+  if is_move_safe["down"]:
+    if my_head_down in my_body[:-1]:
+      is_move_safe["down"] = False
 
-    # 右方向の確認
-    if is_move_safe["right"]:
-        if my_head_right in my_body[:-1]:
-            is_move_safe["right"] = False
+  # 頭の左のマスが自分の体（尻尾を除く）ではないか
+  if is_move_safe["left"]:
+    if my_head_left in my_body[:-1]:
+      is_move_safe["left"] = False
 
-    # Are there any safe moves left?
-    safe_moves = []
-    for move, isSafe in is_move_safe.items():
-        if isSafe:
-            safe_moves.append(move)
+  # 頭の右のマスが自分の体（尻尾を除く）ではないか
+  if is_move_safe["right"]:
+    if my_head_right in my_body[:-1]:
+      is_move_safe["right"] = False
 
-    if len(safe_moves) == 1:
-        print(f"MOVE {game_state['turn']}: safe moves detected")
-        return {"move": safe_moves[0]}
+  safe_moves = []
+  for move, isSafe in is_move_safe.items():
+    if isSafe:
+      safe_moves.append(move)
 
-    # Choose a random move from the safe ones
-    next_move = ""
-    if len(safe_moves) != 0:
-        unsafe_moves = []
-        if "up" in safe_moves:
-            my_head_up_left = {"x": my_head_up["x"] - 1, "y": my_head_up["y"]}
-            if my_head_up_left["x"] < 0 or my_head_up_left in my_body[:-2]:
-                my_head_up_right = {"x": my_head_up["x"] + 1, "y": my_head_up["y"]}
-                if my_head_up_right["x"] >= 7 or my_head_up_right in my_body[:-2]:
-                    my_head_up_up = {"x": my_head_up["x"], "y": my_head_up["y"] + 1}
-                    if my_head_up_up["y"] >= 7 or my_head_up_up in my_body[:-2]:
-                        unsafe_moves.append("up")
-        if "down" in safe_moves:
-            my_head_down_left = {"x": my_head_down["x"] - 1, "y": my_head_down["y"]}
-            if my_head_down_left["x"] < 0 or my_head_down_left in my_body[:-2]:
-                my_head_down_right = {
-                    "x": my_head_down["x"] + 1,
-                    "y": my_head_down["y"],
-                }
-                if my_head_down_right["x"] >= 7 or my_head_down_right in my_body[:-2]:
-                    my_head_down_down = {
-                        "x": my_head_down["x"],
-                        "y": my_head_down["y"] - 1,
-                    }
-                    if my_head_down_down["y"] < 0 or my_head_down_down in my_body[:-2]:
-                        unsafe_moves.append("down")
-        if "right" in safe_moves:
-            my_head_right_up = {"x": my_head_right["x"], "y": my_head_right["y"] + 1}
-            if my_head_right_up["y"] >= 7 or my_head_right_up in my_body[:-2]:
-                my_head_right_right = {
-                    "x": my_head_right["x"] + 1,
-                    "y": my_head_right["y"],
-                }
-                if my_head_right_right["x"] >= 7 or my_head_right_right in my_body[:-2]:
-                    my_head_right_down = {
-                        "x": my_head_right["x"],
-                        "y": my_head_right["y"] - 1,
-                    }
-                    if (
-                        my_head_right_down["y"] < 0
-                        or my_head_right_down in my_body[:-2]
-                    ):
-                        unsafe_moves.append("right")
-        if "left" in safe_moves:
-            my_head_left_up = {"x": my_head_left["x"], "y": my_head_left["y"] + 1}
-            if my_head_left_up["y"] >= 7 or my_head_left_up in my_body[:-2]:
-                my_head_left_left = {
-                    "x": my_head_left["x"] - 1,
-                    "y": my_head_left["y"],
-                }
-                if my_head_left_left["x"] < 0 or my_head_left_left in my_body[:-2]:
-                    my_head_left_down = {
-                        "x": my_head_left["x"],
-                        "y": my_head_left["y"] - 1,
-                    }
-                    if my_head_left_down["y"] < 0 or my_head_left_down in my_body[:-2]:
-                        unsafe_moves.append("left")
-        if len(unsafe_moves) >= 1:
-            print("unsafe_moves:", unsafe_moves)
-            next_safe_moves = []
-            for move in safe_moves:
-                if move not in unsafe_moves:
-                    next_safe_moves.append(move)
-            if len(next_safe_moves) == 1:
-                print(f"MOVE {game_state['turn']}: {next_safe_moves[0]}")
-                return {"move": next_safe_moves[0]}
-            elif len(next_safe_moves) >= 2:
-                safe_moves = next_safe_moves
-            else:
-                print("デバック用")
-        if len(safe_moves) == 2:
-            # 左右しかないとき
-            if "left" in safe_moves and "right" in safe_moves:
-                # 下向き
-                if my_head["y"] < my_neck["y"]:
-                    next_move = "right"
-                # 上向き
-                else:
-                    next_move = "left"
-            # 上下しかないとき
-            if "up" in safe_moves and "down" in safe_moves:
-                # 左向き
-                if my_head["x"] < my_neck["x"]:
-                    next_move = "down"
-                # 右向き
-                else:
-                    next_move = "up"
-        if next_move == "":
-            next_move = random.choice(safe_moves)
+  # この段階で一方向に絞り込まれた場合はその方向へ進む
+  if len(safe_moves) == 1:
+    # print(f"MOVE {game_state['turn']}: safe moves [{safe_moves[0]}] detected")
+    return {"move": safe_moves[0]}
+
+  next_move = ""
+  if len(safe_moves) != 0:
+    # floodfill法で自分が自分に囲まれるのを防ぐ
+    counts_right = 0  # 右方向から行ける空白のマスの数
+    counts_left = 0  # 左方向から行ける空白のマスの数
+    counts_up = 0  # 上方向から行ける空白のマスの数
+    counts_down = 0  # 下方向から行ける空白のマスの数
+    unsafe_moves = []
+    board = [[0] * 11 for _ in range(11)]
+    for i, body in enumerate(my_body):
+      board[body["x"]][body["y"]] = i + 1
+    if "right" in safe_moves:
+      visited = [[False] * 11 for _ in range(11)]
+      counts_right = floodfill(board, my_head["x"] + 1, my_head["y"], visited,
+                               my_tail)
+      if counts_right < 50:
+        unsafe_moves.append("right")
+      elif counts_right == 50 and game_state["you"]["health"] >= 40:
+        # print(f"MOVE {game_state['turn']}: tail is right")
+        return {"move": "right"}
+    if "left" in safe_moves:
+      visited = [[False] * 11 for _ in range(11)]
+      counts_left = floodfill(board, my_head["x"] - 1, my_head["y"], visited,
+                              my_tail)
+      if counts_left < 50:
+        unsafe_moves.append("left")
+      elif counts_left == 50 and game_state["you"]["health"] >= 40:
+        # print(f"MOVE {game_state['turn']}: tail is left")
+        return {"move": "left"}
+    if "up" in safe_moves:
+      visited = [[False] * 11 for _ in range(11)]
+      counts_up = floodfill(board, my_head["x"], my_head["y"] + 1, visited,
+                            my_tail)
+      if counts_up < 50:
+        unsafe_moves.append("up")
+      elif counts_up == 50 and game_state["you"]["health"] >= 40:
+        # print(f"MOVE {game_state['turn']}: tail is up")
+        return {"move": "up"}
+    if "down" in safe_moves:
+      visited = [[False] * 11 for _ in range(11)]
+      counts_down = floodfill(board, my_head["x"], my_head["y"] - 1, visited,
+                              my_tail)
+      if counts_down < 50:
+        unsafe_moves.append("down")
+      elif counts_down == 50 and game_state["you"]["health"] >= 40:
+        # print(f"MOVE {game_state['turn']}: tail is down")
+        return {"move": "down"}
+    not_unsafe_moves = []
+    for move in safe_moves:
+      if move not in unsafe_moves:
+        not_unsafe_moves.append(move)
+    if len(not_unsafe_moves) == 1:
+      # print(f"MOVE {game_state['turn']}: {not_unsafe_moves[0]}")
+      return {"move": not_unsafe_moves[0]}
+    elif len(not_unsafe_moves) >= 2:
+      safe_moves = not_unsafe_moves
+    if len(safe_moves) == 2:
+      # 左右しかないとき
+      if "left" in safe_moves and "right" in safe_moves:
+        # 下向き
+        if my_head["y"] < my_neck["y"]:
+          next_move = "right"
+        # 上向き
+        else:
+          next_move = "left"
+      # 上下しかないとき
+      if "up" in safe_moves and "down" in safe_moves:
+        # 左向き
+        if my_head["x"] < my_neck["x"]:
+          next_move = "down"
+        # 右向き
+        else:
+          next_move = "up"
+    if next_move == "":
+      next_move = random.choice(safe_moves)
+  """
     first_next_moves = [
         ["up", "up", "up", "up", "up", "up", "right"],
         ["left", "up", "left", "left", "left", "right", "right"],
@@ -211,45 +211,127 @@ def move(game_state: typing.Dict) -> typing.Dict:
     first_next_move = first_next_moves[my_head["x"]][my_head["y"]]
     if first_next_move in safe_moves:
         next_move = first_next_move
+    """
 
-    if game_state["you"]["health"] >= 19:
-        print(f"MOVE {game_state['turn']}: {next_move}")
-        return {"move": next_move}
+  if game_state["you"]["health"] >= 19 + game_state["you"]["length"] / 5:
+    # 体力が十分あるならそのまま外周を進む
+    next_my_head = my_head
+    if next_move == "up":
+      next_my_head = {"x": my_head["x"], "y": my_head["y"] + 1}
+    elif next_move == "down":
+      next_my_head = {"x": my_head["x"], "y": my_head["y"] - 1}
+    elif next_move == "right":
+      next_my_head = {"x": my_head["x"] + 1, "y": my_head["y"]}
     else:
-        if my_head["y"] == 0:
-            if my_head["x"] == 0:
-                if "up" in safe_moves:
-                    next_move = "up"
-            elif my_head["x"] == 6:
-                if "left" in safe_moves:
-                    next_move = "left"
-            else:
-                for food in game_state["board"]["food"]:
-                    if my_head["x"] == food["x"] and "up" in safe_moves:
-                        next_move = "up"
-        elif my_head["y"] == 6:
-            if my_head["x"] == 0:
-                if "right" in safe_moves:
-                    next_move = "right"
-            elif my_head["x"] == 6:
-                if "down" in safe_moves:
-                    next_move = "down"
-            else:
-                for food in game_state["board"]["food"]:
-                    if my_head["x"] == food["x"] and "down" in safe_moves:
-                        next_move = "down"
-        elif my_head["y"] != my_neck["y"]:
-            if my_head["y"] < my_neck["y"]:
-                if "down" in safe_moves:
-                    next_move = "down"
-            elif "up" in safe_moves:
-                next_move = "up"
-        print(f"MOVE {game_state['turn']}: {next_move}")
-        return {"move": next_move}
+      next_my_head = {"x": my_head["x"] - 1, "y": my_head["y"]}
+    # 次のターンに餌をできるだけ食べないようにする。
+    food = game_state["board"]["food"]
+    if next_my_head in food:
+      new_safe_moves = []
+      for move in safe_moves:
+        if move != next_move:
+          new_safe_moves.append(move)
+      if len(new_safe_moves) != 0:
+        next_move = random.choice(new_safe_moves)
+    elif (my_head in [{
+        "x": 1,
+        "y": 0
+    }] and {
+        "x": 0,
+        "y": 1
+    } in food and "up" in safe_moves):
+      next_move = "up"
+    elif (my_head in [{
+        "x": 0,
+        "y": 9
+    }] and {
+        "x": 1,
+        "y": 10
+    } in food and "right" in safe_moves):
+      next_move = "right"
+    elif (my_head in [{
+        "x": 9,
+        "y": 10
+    }] and {
+        "x": 10,
+        "y": 9
+    } in food and "down" in safe_moves):
+      next_move = "down"
+    elif (my_head in [{
+        "x": 10,
+        "y": 1
+    }] and {
+        "x": 9,
+        "y": 0
+    } in food and "left" in safe_moves):
+      next_move = "left"
+    # print(f"MOVE {game_state['turn']}: {next_move}")
+    return {"move": next_move}
+  else:
+    # 体力が19未満なら餌がある方向へ進む
+    # 餌が頭のすぐ隣に存在する時その方向へ進む
+    if my_head_up in game_state["board"]["food"]:
+      if "up" in safe_moves:
+        next_move = "up"
+    elif my_head_down in game_state["board"]["food"]:
+      if "down" in safe_moves:
+        next_move = "down"
+    elif my_head_right in game_state["board"]["food"]:
+      if "right" in safe_moves:
+        next_move = "right"
+    elif my_head_left in game_state["board"]["food"]:
+      if "left" in safe_moves:
+        next_move = "left"
+    # 外側一周にいて、餌が内側にあればその方向へ向かう
+    elif my_head["y"] == 0:
+      if my_head["x"] == 0:
+        if "up" in safe_moves:
+          next_move = "up"
+      elif my_head["x"] == 10:
+        if "left" in safe_moves:
+          next_move = "left"
+      else:
+        for food in game_state["board"]["food"]:
+          if my_head["x"] == food["x"] and "up" in safe_moves:
+            next_move = "up"
+    elif my_head["y"] == 10:
+      if my_head["x"] == 0:
+        if "right" in safe_moves:
+          next_move = "right"
+      elif my_head["x"] == 10:
+        if "down" in safe_moves:
+          next_move = "down"
+      else:
+        for food in game_state["board"]["food"]:
+          if my_head["x"] == food["x"] and "down" in safe_moves:
+            next_move = "down"
+    elif my_head["x"] == 0:
+      for food in game_state["board"]["food"]:
+        if my_head["y"] == food["y"] and "right" in safe_moves:
+          next_move = "right"
+    elif my_head["x"] == 10:
+      for food in game_state["board"]["food"]:
+        if my_head["y"] == food["y"] and "left" in safe_moves:
+          next_move = "left"
+
+    # 向いている方向（餌のある方向）に進み続ける
+    elif my_head["y"] != my_neck["y"]:
+      if my_head["y"] < my_neck["y"]:
+        if "down" in safe_moves:
+          next_move = "down"
+      elif "up" in safe_moves:
+        next_move = "up"
+    else:
+      if my_head["x"] < my_neck["x"]:
+        if "left" in safe_moves:
+          next_move = "left"
+      elif "right" in safe_moves:
+        next_move = "right"
+    # print(f"MOVE {game_state['turn']}: {next_move}")
+    return {"move": next_move}
 
 
-# Start server when `python main.py` is run
 if __name__ == "__main__":
-    from server import run_server
+  from server import run_server
 
-    run_server({"info": info, "start": start, "move": move, "end": end})
+  run_server({"info": info, "start": start, "move": move, "end": end})
