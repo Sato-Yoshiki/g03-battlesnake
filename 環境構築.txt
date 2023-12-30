@@ -1,0 +1,26 @@
+1.wslの起動
+wsl
+をコマンドプロンプトで打つ
+
+エラーが出たら
+wsl -l -v
+を打ってみてUbuntuという文字があれば
+wsl -s Ubuntu
+wsl
+を打つ
+
+エラーが出たり、Ubuntuの文字がでなければ
+wslのインストールをするために
+wsl --install
+を打つ
+うまく行けばユーザー名とパスワードの設定ができる
+
+
+2.flaskのインストール
+sudo apt install python3-pip
+pip install flask
+
+うまく行かなかったら
+sudo apt update && sudo apt upgrade
+をしてからもう一度
+
