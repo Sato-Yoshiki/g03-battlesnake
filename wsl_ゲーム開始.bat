@@ -1,2 +1,2 @@
-wsl ./2.sh
+wsl bash ./2.sh
 pause
