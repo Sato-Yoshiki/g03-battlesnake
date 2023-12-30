@@ -25,21 +25,15 @@ pip install flask
 sudo apt update && sudo apt upgrade
 をしてからもう一度
 
-3.ブラウザ(Google Chromeのダウンロード)
-
-1.
-cd /tmp
-2.
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-3.
-sudo dpkg -i google-chrome-stable_current_amd64.deb
-4.
-sudo apt install --fix-broken -y
-5.
-sudo dpkg -i google-chrome-stable_current_amd64.deb
-うまく行けば
-google-chrome
-で起動できる
 
 ・演習室環境を使う方法
 上の2.flaskのインストールだけを行う
+
+
+
+
+・battlesnake実行方法
+１．
+wsl_サーバー起動.batをダブルクリック
+２．
+ゲーム開始.batをダブルクリック
