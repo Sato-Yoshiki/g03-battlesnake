@@ -32,7 +32,7 @@ def end(game_state: typing.Dict):
 def floodfill(board, x, y, visited, my_tail):
     if x < 0 or x >= 11 or y < 0 or y >= 11 or visited[x][y] or board[x][y] != 0:
         if my_tail["x"] == x and my_tail["y"] == y:
-            return 50
+            return 0
         else:
             return 0
     visited[x][y] = True
@@ -202,129 +202,67 @@ def move(game_state: typing.Dict) -> typing.Dict:
                     next_move = "up"
         if next_move == "":
             next_move = random.choice(safe_moves)
-    """
-    first_next_moves = [
-        ["up", "up", "up", "up", "up", "up", "right"],
-        ["left", "up", "left", "left", "left", "right", "right"],
-        ["left", "down", "up", "left", "right", "up", "right"],
-        ["left", "down", "down", "left", "up", "up", "right"],
-        ["left", "down", "left", "right", "down", "up", "right"],
-        ["left", "left", "right", "right", "right", "down", "right"],
-        ["left", "down", "down", "down", "down", "down", "down"],
-    ]
-    first_next_move = first_next_moves[my_head["x"]][my_head["y"]]
-    if first_next_move in safe_moves:
-        next_move = first_next_move
-    """
 
-    if game_state["you"]["health"] >= 19 + game_state["you"]["length"] / 5:
-        # 体力が十分あるならそのまま外周を進む
-        next_my_head = my_head
-        if next_move == "up":
-            next_my_head = {"x": my_head["x"], "y": my_head["y"] + 1}
-        elif next_move == "down":
-            next_my_head = {"x": my_head["x"], "y": my_head["y"] - 1}
-        elif next_move == "right":
-            next_my_head = {"x": my_head["x"] + 1, "y": my_head["y"]}
-        else:
-            next_my_head = {"x": my_head["x"] - 1, "y": my_head["y"]}
-        # 次のターンに餌をできるだけ食べないようにする。
-        food = game_state["board"]["food"]
-        if next_my_head in food:
-            new_safe_moves = []
-            for move in safe_moves:
-                if move != next_move:
-                    new_safe_moves.append(move)
-            if len(new_safe_moves) != 0:
-                next_move = random.choice(new_safe_moves)
-        elif (
-            my_head in [{"x": 1, "y": 0}]
-            and {"x": 0, "y": 1} in food
-            and "up" in safe_moves
-        ):
+    # 餌が頭のすぐ隣に存在する時その方向へ進む
+    if my_head_up in game_state["board"]["food"]:
+        if "up" in safe_moves:
             next_move = "up"
-        elif (
-            my_head in [{"x": 0, "y": 9}]
-            and {"x": 1, "y": 10} in food
-            and "right" in safe_moves
-        ):
-            next_move = "right"
-        elif (
-            my_head in [{"x": 9, "y": 10}]
-            and {"x": 10, "y": 9} in food
-            and "down" in safe_moves
-        ):
+    elif my_head_down in game_state["board"]["food"]:
+        if "down" in safe_moves:
             next_move = "down"
-        elif (
-            my_head in [{"x": 10, "y": 1}]
-            and {"x": 9, "y": 0} in food
-            and "left" in safe_moves
-        ):
+    elif my_head_right in game_state["board"]["food"]:
+        if "right" in safe_moves:
+            next_move = "right"
+    elif my_head_left in game_state["board"]["food"]:
+        if "left" in safe_moves:
             next_move = "left"
-        # print(f"MOVE {game_state['turn']}: {next_move}")
-        return {"move": next_move}
-    else:
-        # 体力が19未満なら餌がある方向へ進む
-        # 餌が頭のすぐ隣に存在する時その方向へ進む
-        if my_head_up in game_state["board"]["food"]:
+    # 外側一周にいて、餌が内側にあればその方向へ向かう
+    elif my_head["y"] == 0:
+        if my_head["x"] == 0:
             if "up" in safe_moves:
                 next_move = "up"
-        elif my_head_down in game_state["board"]["food"]:
-            if "down" in safe_moves:
-                next_move = "down"
-        elif my_head_right in game_state["board"]["food"]:
-            if "right" in safe_moves:
-                next_move = "right"
-        elif my_head_left in game_state["board"]["food"]:
+        elif my_head["x"] == 10:
             if "left" in safe_moves:
                 next_move = "left"
-        # 外側一周にいて、餌が内側にあればその方向へ向かう
-        elif my_head["y"] == 0:
-            if my_head["x"] == 0:
-                if "up" in safe_moves:
-                    next_move = "up"
-            elif my_head["x"] == 10:
-                if "left" in safe_moves:
-                    next_move = "left"
-            else:
-                for food in game_state["board"]["food"]:
-                    if my_head["x"] == food["x"] and "up" in safe_moves:
-                        next_move = "up"
-        elif my_head["y"] == 10:
-            if my_head["x"] == 0:
-                if "right" in safe_moves:
-                    next_move = "right"
-            elif my_head["x"] == 10:
-                if "down" in safe_moves:
-                    next_move = "down"
-            else:
-                for food in game_state["board"]["food"]:
-                    if my_head["x"] == food["x"] and "down" in safe_moves:
-                        next_move = "down"
-        elif my_head["x"] == 0:
-            for food in game_state["board"]["food"]:
-                if my_head["y"] == food["y"] and "right" in safe_moves:
-                    next_move = "right"
-        elif my_head["x"] == 10:
-            for food in game_state["board"]["food"]:
-                if my_head["y"] == food["y"] and "left" in safe_moves:
-                    next_move = "left"
-
-        # 向いている方向（餌のある方向）に進み続ける
-        elif my_head["y"] != my_neck["y"]:
-            if my_head["y"] < my_neck["y"]:
-                if "down" in safe_moves:
-                    next_move = "down"
-            elif "up" in safe_moves:
-                next_move = "up"
         else:
-            if my_head["x"] < my_neck["x"]:
-                if "left" in safe_moves:
-                    next_move = "left"
-            elif "right" in safe_moves:
+            for food in game_state["board"]["food"]:
+                if my_head["x"] == food["x"] and "up" in safe_moves:
+                    next_move = "up"
+    elif my_head["y"] == 10:
+        if my_head["x"] == 0:
+            if "right" in safe_moves:
                 next_move = "right"
-        # print(f"MOVE {game_state['turn']}: {next_move}")
-        return {"move": next_move}
+        elif my_head["x"] == 10:
+            if "down" in safe_moves:
+                next_move = "down"
+        else:
+            for food in game_state["board"]["food"]:
+                if my_head["x"] == food["x"] and "down" in safe_moves:
+                    next_move = "down"
+    elif my_head["x"] == 0:
+        for food in game_state["board"]["food"]:
+            if my_head["y"] == food["y"] and "right" in safe_moves:
+                next_move = "right"
+    elif my_head["x"] == 10:
+        for food in game_state["board"]["food"]:
+            if my_head["y"] == food["y"] and "left" in safe_moves:
+                next_move = "left"
+
+    # 向いている方向（餌のある方向）に進み続ける
+    elif my_head["y"] != my_neck["y"]:
+        if my_head["y"] < my_neck["y"]:
+            if "down" in safe_moves:
+                next_move = "down"
+        elif "up" in safe_moves:
+            next_move = "up"
+    else:
+        if my_head["x"] < my_neck["x"]:
+            if "left" in safe_moves:
+                next_move = "left"
+        elif "right" in safe_moves:
+            next_move = "right"
+    # print(f"MOVE {game_state['turn']}: {next_move}")
+    return {"move": next_move}
 
 
 if __name__ == "__main__":
