@@ -12,15 +12,17 @@ function drawBoard(turnData) {
             var cell = document.createElement('div');
             cell.classList.add('cell');
 
+            var invertedY = boardSize - 1 - y; // Y座標を逆にする
+
             turnData.board.food.forEach(function (food) {
-                if (food.x === x && food.y === y) {
+                if (food.x === x && food.y === invertedY) {
                     cell.classList.add('food');
                 }
             });
 
             turnData.board.snakes.forEach(function (snake, index) {
                 snake.body.forEach(function (bodyPart) {
-                    if (bodyPart.x === x && bodyPart.y === y) {
+                    if (bodyPart.x === x && bodyPart.y === invertedY) {
                         if (index === 0) {
                             cell.classList.add('snake1');
                         } else {
@@ -64,11 +66,13 @@ function autoPlay() {
         autoPlayInterval = null;
     } else {
         autoPlayInterval = setInterval(function () {
-            nextTurn();
-            if (currentTurn >= gameLog.length - 1) {
-                clearInterval(autoPlayInterval);
+            if (currentTurn < gameLog.length - 1) {
+                nextTurn();
+            } else {
+                clearInterval(autoPlayInterval); // 最後のターンに達したら停止
+                autoPlayInterval = null; // インターバルIDをクリア
             }
-        }, 1000);
+        }, 40);
     }
 }
 
