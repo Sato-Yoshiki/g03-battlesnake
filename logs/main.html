@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  #game-board {
+    display: grid;
+    margin: 20px;
+    grid-template-columns: repeat(11, 20px);
+    grid-gap: 1px;
+  }
+  .cell {
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border: solid 1px #000;
+  }
+  .food {
+    background-color: green;
+  }
+  .snake1 {
+    background-color: #f81900;
+  }
+  .snake2 {
+    background-color: blue;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-board"></div>
+<br>
+<button onclick="firstTurn()">First Turn</button>
+<button onclick="prevTurn()">Previous Turn</button>
+<button onclick="autoPlay()">Auto Play / Stop</button>
+<button onclick="nextTurn()">Next Turn</button>
+<button onclick="lastTurn()">Last Turn</button>
+
+<script src="./output.js"></script>
+<script src="./game.js"></script>
+</body>
+</html>
