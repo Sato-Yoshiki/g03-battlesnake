@@ -3,3 +3,4 @@
 __pycache__/
 logs/history/*.log
 logs/history/*.js
+logs/history/*/*
