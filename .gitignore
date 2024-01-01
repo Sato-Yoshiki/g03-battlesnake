@@ -1,4 +1,4 @@
 *.DS_Store
 *.pyc
 __pycache__/
-logs/history
+logs/history/*
