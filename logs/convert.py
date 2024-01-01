@@ -4,8 +4,8 @@ import os
 def main():
     # スクリプトのあるディレクトリの絶対パスを取得
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    log_file_path = os.path.join(script_dir, "out.log")
-    output_path = os.path.join(script_dir, "output.js")
+    log_file_path = os.path.join(script_dir, "history/out.log")
+    output_path = os.path.join(script_dir, "history/output.js")
     with open(log_file_path, "r") as file:
         lines = file.readlines()
         # 最初の行と最後の行を除外
