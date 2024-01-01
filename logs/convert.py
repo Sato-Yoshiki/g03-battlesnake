@@ -8,6 +8,8 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     log_file_path = os.path.join(script_dir, "history", "out.log")
     output_path = os.path.join(script_dir, "history", "output.js")
+    if not os.path.exists(os.path.join(script_dir, "history")):
+        os.makedirs(os.path.join(script_dir, "history"))
     with open(log_file_path, "r") as file:
         lines = file.readlines()
         # 最初の行と最後の行を除外
