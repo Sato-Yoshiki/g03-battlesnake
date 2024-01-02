@@ -37,11 +37,25 @@ function drawBoard(turnData) {
     }
 }
 
+function updateSnakeInfo(turnData) {
+    var snakeInfoDiv = document.getElementById('snake-info');
+    snakeInfoDiv.innerHTML = ''; // Clear the info
+
+    turnData.board.snakes.forEach(function (snake, index) {
+        var snakeInfo = document.createElement('p');
+        var color = index === 0 ? '#f81900' : 'blue';
+        snakeInfo.style.color = color;
+        snakeInfo.textContent = 'Snake ' + (index + 1) + ': ' + snake.name + ', Health: ' + snake.health;
+        snakeInfoDiv.appendChild(snakeInfo);
+    });
+}
+
 function changeTurn(turn) {
     currentTurn = turn;
     if (currentTurn < 0) currentTurn = 0;
     if (currentTurn >= gameLog.length) currentTurn = gameLog.length - 1;
     drawBoard(gameLog[currentTurn]);
+    updateSnakeInfo(gameLog[currentTurn]); // Add this line
 }
 
 function nextTurn() {
