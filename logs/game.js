@@ -2,6 +2,7 @@
 var currentTurn = 0;
 var autoPlayInterval;
 var boardSize = 11;
+var snake1Id = gameLog[0].board.snakes[0].id
 
 function drawBoard(turnData) {
     var board = document.getElementById('game-board');
@@ -20,10 +21,10 @@ function drawBoard(turnData) {
                 }
             });
 
-            turnData.board.snakes.forEach(function (snake, index) {
+            turnData.board.snakes.forEach(function (snake) {
                 snake.body.forEach(function (bodyPart) {
                     if (bodyPart.x === x && bodyPart.y === invertedY) {
-                        if (index === 0) {
+                        if (snake.id === snake1Id) {
                             cell.classList.add('snake1');
                         } else {
                             cell.classList.add('snake2');
@@ -41,9 +42,10 @@ function updateSnakeInfo(turnData) {
     var snakeInfoDiv = document.getElementById('snake-info');
     snakeInfoDiv.innerHTML = ''; // Clear the info
 
-    turnData.board.snakes.forEach(function (snake, index) {
+    turnData.board.snakes.forEach(function (snake) {
         var snakeInfo = document.createElement('p');
-        var color = index === 0 ? '#f81900' : 'blue';
+        var color = snake.id == snake1Id ? '#f81900' : 'blue';
+        var index = snake.id == snake1Id ? 0 : 1;
         snakeInfo.style.color = color;
         snakeInfo.textContent = 'Snake ' + (index + 1) + ': ' + snake.name + ', Health: ' + snake.health;
         snakeInfoDiv.appendChild(snakeInfo);
