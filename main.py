@@ -4,9 +4,9 @@
 #  //    / /    //   | |     //   / /     //   / /     //          //   / /         ) ) #
 # ((____/ /    //    | |    ((___/ /     ((___/ /     //          ((___/ /    ((___/ /  #
 
-import typing
 import time
-from ctypes import c_int, c_char, POINTER, Structure, cdll, byref
+import typing
+from ctypes import POINTER, Structure, byref, c_char, c_int, cdll
 
 
 def info() -> typing.Dict:
