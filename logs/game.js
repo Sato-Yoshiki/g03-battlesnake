@@ -6,7 +6,7 @@ var snake1Id = gameLog[0].board.snakes[0].id
 
 function drawBoard(turnData) {
     var board = document.getElementById('game-board');
-    board.innerHTML = ''; // Clear the board
+    board.innerHTML = ''; // ボードをクリア
 
     for (var y = 0; y < boardSize; y++) {
         for (var x = 0; x < boardSize; x++) {
@@ -22,13 +22,17 @@ function drawBoard(turnData) {
             });
 
             turnData.board.snakes.forEach(function (snake) {
-                snake.body.forEach(function (bodyPart) {
+                snake.body.forEach(function (bodyPart, index) {
                     if (bodyPart.x === x && bodyPart.y === invertedY) {
+                        if (index === 0) {
+                            cell.classList.add('snake-head'); // ヘッドにクラスを追加
+                        }
                         if (snake.id === snake1Id) {
                             cell.classList.add('snake1');
                         } else {
                             cell.classList.add('snake2');
                         }
+
                     }
                 });
             });
@@ -38,19 +42,34 @@ function drawBoard(turnData) {
     }
 }
 
+
 function updateSnakeInfo(turnData) {
     var snakeInfoDiv = document.getElementById('snake-info');
-    snakeInfoDiv.innerHTML = ''; // Clear the info
+    snakeInfoDiv.innerHTML = ''; // 情報をクリア
 
     turnData.board.snakes.forEach(function (snake) {
-        var snakeInfo = document.createElement('p');
+        var snakeInfo = document.createElement('div');
+        var healthBar = document.createElement('div');
+
+        // ヘルスの割合を計算
+        var healthPercentage = (snake.health / 100) * 100;
+
         var color = snake.id == snake1Id ? '#f81900' : 'blue';
         var index = snake.id == snake1Id ? 0 : 1;
+
         snakeInfo.style.color = color;
-        snakeInfo.textContent = 'Snake ' + (index + 1) + ': ' + snake.name + ', Health: ' + snake.health;
+        snakeInfo.textContent = 'snake' + (index + 1) + ': ' + snake.name + ',Health: ' + snake.health;
+
+        // ヘルスバーの設定
+        healthBar.style.width = healthPercentage + '%';
+        healthBar.style.height = '10px';
+        healthBar.style.backgroundColor = color;
+
+        snakeInfo.appendChild(healthBar);
         snakeInfoDiv.appendChild(snakeInfo);
     });
 }
+
 
 function changeTurn(turn) {
     currentTurn = turn;
