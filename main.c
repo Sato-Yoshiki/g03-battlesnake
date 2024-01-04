@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+const char moves[4] = {'u', 'd', 'l', 'r'};
 typedef struct {
     int x;
     int y;
@@ -242,64 +243,56 @@ GameUpdate performMove(Node *my_body, Node *enemy_body, Node *foods,
 }
 
 char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
-    printf("foodcount:%d,food1:(%d,%d)\n", data->food_count, data->foods[0].x,
-           data->foods[0].y);
-    // 配列を連結リストに変換
+    // すべての可能な動きのための配列を連結リストに変換
     Node *my_body = array_to_linked_list(my_snake->body, my_snake->body_length);
     Node *enemy_body =
         array_to_linked_list(enemy_snake->body, enemy_snake->body_length);
     Node *foods = array_to_linked_list(data->foods, data->food_count);
 
-    char next_move = 'd';
+    char best_move = '\0';
+    char survivor;
 
-    GameUpdate state1 = performMove(my_body, enemy_body, foods, 'u', 'u');
-    GameUpdate state2 = performMove(my_body, enemy_body, foods, 'd', 'u');
-    GameUpdate state3 = performMove(my_body, enemy_body, foods, 'l', 'u');
-    GameUpdate state4 = performMove(my_body, enemy_body, foods, 'r', 'u');
+    // 仮定に基づいてゲームの現状を最も良くする動きを見つけえる
+    int best_score = -1;
+    for (int i = 0; i < 4; i++) {
+        char my_potential_move = moves[i];
 
-    printf("%c%c%c%c\n", state1.survivor, state2.survivor, state3.survivor,
-           state4.survivor);
-    if (state1.survivor == 'm') {
-        next_move = 'u';
-    } else if (state2.survivor == 'm') {
-        next_move = 'd';
-    } else if (state3.survivor == 'm') {
-        next_move = 'l';
-    } else if (state4.survivor == 'm') {
-        next_move = 'r';
-    } else if (state1.survivor == '2' && state2.survivor == '2' && state3.survivor == '2' && state4.survivor == '2') {
-        srand(time(NULL));
-        int randomNum = rand() % 4;
-        switch (randomNum) {
-            case 0:
-                return 'u';
-            case 1:
-                return 'd';
-            case 2:
-                return 'l';
-            case 3:
-                return 'r';
-        }
-    }else if(state1.survivor == '2' && state2.survivor != '2' && state3.survivor != '2' && state4.survivor != '2') {
-        next_move = 'u';
-    } else if (state2.survivor == '2' && state3.survivor != '2' && state4.survivor != '2') {
-        next_move = 'd';
-    } else if (state3.survivor == '2' && state4.survivor != '2') {
-        next_move = 'l';
-    } else if (state4.survivor == '2') {
-        next_move = 'r';
-    } else {
-        srand(time(NULL));
-        int randomNum = rand() % 4;
-        switch (randomNum) {
-            case 0:
-                return 'u';
-            case 1:
-                return 'd';
-            case 2:
-                return 'r';
-            case 3:
-                return 'l';
+        for (int j = 0; j < 4; j++) {
+            char enemy_potential_move = moves[j];
+
+            GameUpdate result =
+                performMove(my_body, enemy_body, foods, my_potential_move,
+                            enemy_potential_move);
+
+            // スコアリングの論理を実装
+            // - 'm' (自分だけが生存) の場合、高くスコア
+            // - '2' (どちらも生存) の場合、次に良いスコア。
+            // - 'n' または 'e' の場合、低いスコア。
+            int score;
+            switch (result.survivor) {
+                case 'm':
+                    score = 3;
+                    break;
+                case '2':
+                    score = 2;
+                    break;
+                case 'e':
+                case 'n':
+                default:
+                    score = 0;
+                    break;
+            }
+
+            if (score > best_score) {
+                best_score = score;
+                best_move = my_potential_move;
+                survivor = result.survivor;
+            }
+            /*
+            free_linked_list(result.my_body);
+            free_linked_list(result.enemy_body);
+            free_linked_list(result.foods);
+            */
         }
     }
 
@@ -307,5 +300,11 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
     free_linked_list(enemy_body);
     free_linked_list(foods);
 
-    return next_move;
+    // もし有効な動きが見つからなかった場合はランダムな動きを返します。
+    if (best_move == '\0') {
+        srand(time(NULL));
+        return moves[rand() % 4];
+    }
+
+    return best_move;
 }

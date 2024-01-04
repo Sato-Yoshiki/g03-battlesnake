@@ -1,2 +1,2 @@
-wsl gcc main.c -shared -o main.so 
+wsl gcc -fPIC main.c -shared -o main.so 
 pause
