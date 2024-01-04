@@ -110,6 +110,7 @@ def move(game_state: typing.Dict) -> typing.Dict:
         next_move = "up"
     # デバッグ用遅延　本番では削除！！！！！！！！
     # time.sleep(0.48)
+    print(f"MOVE {game_state['turn']}: {next_move}")
     return {"move": next_move}
 
 

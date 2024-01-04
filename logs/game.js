@@ -76,7 +76,11 @@ function changeTurn(turn) {
     if (currentTurn < 0) currentTurn = 0;
     if (currentTurn >= gameLog.length) currentTurn = gameLog.length - 1;
     drawBoard(gameLog[currentTurn]);
-    updateSnakeInfo(gameLog[currentTurn]); // Add this line
+    updateSnakeInfo(gameLog[currentTurn]);
+
+    // ターン情報を更新
+    var turnInfoDiv = document.getElementById('turn-info');
+    turnInfoDiv.textContent = 'Turn: ' + currentTurn;
 }
 
 function nextTurn() {
@@ -100,6 +104,7 @@ function autoPlay() {
         clearInterval(autoPlayInterval);
         autoPlayInterval = null;
     } else {
+        var interval = document.getElementById('autoplay-interval').value; // 追加
         autoPlayInterval = setInterval(function () {
             if (currentTurn < gameLog.length - 1) {
                 nextTurn();
@@ -107,7 +112,7 @@ function autoPlay() {
                 clearInterval(autoPlayInterval); // 最後のターンに達したら停止
                 autoPlayInterval = null; // インターバルIDをクリア
             }
-        }, 40);
+        }, 100-interval);
     }
 }
 
