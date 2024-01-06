@@ -37,3 +37,6 @@ sudo apt update && sudo apt upgrade
 wsl_サーバー起動.batをダブルクリック
 ２．
 ゲーム開始.batをダブルクリック
+
+手動蛇を動かすためには
+pip install py-getch
