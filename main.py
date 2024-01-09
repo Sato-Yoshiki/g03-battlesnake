@@ -95,6 +95,7 @@ def convert_to_c_types(game_state):
 
 def move(game_state: typing.Dict) -> typing.Dict:
     # 11×11の盤面であることを前提としておりその確認は行わない
+    print(f"==========MOVE {game_state['turn']}: 処理開始==========")
     game_data, my_snake, enemy_snake = convert_to_c_types(game_state)
     next_move = lib.move(byref(game_data), byref(my_snake), byref(enemy_snake))
     if next_move == b"u":

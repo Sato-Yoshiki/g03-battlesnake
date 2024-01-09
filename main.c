@@ -74,7 +74,55 @@ struct GameUpdate {
     GameUpdate *down;
     GameUpdate *left;
     GameUpdate *right;
+    GameUpdate *parent;
 };
+
+void printNodeList(Node *node) {
+    while (node != NULL) {
+        printf("(%d, %d)\n", node->val.x, node->val.y);
+        node = node->next;
+    }
+}
+
+void printGameUpdate(const GameUpdate *update) {
+    if (update == NULL) {
+        printf("GameUpdate is NULL\n");
+        return;
+    }
+
+    // my_body の内容を表示
+    printf("My Body:\n");
+    printNodeList(update->my_body);
+
+    // enemy_body の内容を表示
+    printf("Enemy Body:\n");
+    printNodeList(update->enemy_body);
+
+    // foods の内容を表示
+    printf("Foods:\n");
+    printNodeList(update->foods);
+
+    printf("My Body Length: %d\n", update->my_body_length);
+    printf("Enemy Body Length: %d\n", update->enemy_body_length);
+
+    // survivor の状態を表示
+    switch (update->survivor) {
+        case '2':
+            printf("Both snakes are alive.\n");
+            break;
+        case 'm':
+            printf("Only my snake is alive.\n");
+            break;
+        case 'e':
+            printf("Only enemy snake is alive.\n");
+            break;
+        case 'n':
+            printf("No snakes are alive.\n");
+            break;
+        default:
+            printf("Unknown survivor state: %c\n", update->survivor);
+    }
+}
 
 Node *deepCopyLinkedList(Node *head) {
     Node *new_head = NULL;
@@ -156,30 +204,6 @@ GameUpdate *performMove(Node *my_body, Node *enemy_body, int my_body_length,
         del_body->next = NULL;
     }
 
-    // 自分が体にぶつかっていないか(削除予定！！！)
-    if (update->survivor == '2' || update->survivor == 'm') {
-        // 敵にぶつかっていないか
-        Node *current = update->enemy_body;
-        while (current->next != NULL) {
-            if (update->my_body->val.x == current->val.x &&
-                update->my_body->val.y == current->val.y) {
-                printf("エラー！！！：%c方向は相手の体\n", move);
-                break;
-            }
-            current = current->next;
-        }
-        // 自分自身にぶつかっていないか
-        current = update->my_body->next;
-        while (current->next != NULL) {
-            if (update->my_body->val.x == current->val.x &&
-                update->my_body->val.y == current->val.y) {
-                printf("エラー！！！：%c方向は自分自身の体\n", move);
-                break;
-            }
-            current = current->next;
-        }
-    }
-
     return update;
 }
 
@@ -252,7 +276,7 @@ char get_potential_moves(Node *my_body, Node *enemy_body, int my_body_length,
     return directions;
 }
 
-int eval(GameUpdate *state) {
+int eval(GameUpdate *state, int depth) {
     ////////////////詳細未実装
     if (state->my_body->val.x == state->enemy_body->val.x &&
         state->my_body->val.y == state->enemy_body->val.y) {
@@ -265,21 +289,40 @@ int eval(GameUpdate *state) {
         }
     }
     printf("state.survivor%c\n", state->survivor);
-    int score;
+    int score = 0;
     switch (state->survivor) {
         case 'm':
-            score = 3;
+            score = 1000;
             break;
         case '2':
-            score = 2;
+            score = 0;
             break;
         case 'e':
+            score -= 1000;
         case 'n':
+            score -= 500;
         default:
             score = 0;
             break;
     }
+    // 敵より長いほうがプラス
+    score += (state->my_body_length - state->enemy_body_length) * 30;
+    if (score > 0) {
+        // 勝つのは早い方がいい=depthが浅いほどプラス=depthが深いほどマイナス
+        score += depth;
+    } else if (score < 0) {
+        // 負けるのは後の方がいい=depthが深いほどプラス
+        score -= depth;
+    }
     return score;
+}
+
+char gameover(GameUpdate *state) {
+    if (state->my_body->val.x == state->enemy_body->val.x &&
+        state->my_body->val.y == state->enemy_body->val.y) {
+        return 1;
+    }
+    return 0;
 }
 
 int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
@@ -288,8 +331,8 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
     node->down = NULL;
     node->left = NULL;
     node->right = NULL;
-    if (depth == 0) {
-        return eval(node);
+    if (depth == 0 || gameover(node)) {
+        return eval(node, depth);
     }
 
     if (isMaximizingPlayer) {
@@ -298,78 +341,111 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
             get_potential_moves(node->my_body, node->enemy_body,
                                 node->my_body_length, node->enemy_body_length);
         for (int i = 0; i < 4; i++) {
+            printf("===自分の行動:depth=%d,move=%d↓\n", depth, i);
             int eval = INT_MIN;
             if (i == 0 && (potential_moves & UP)) {
                 node->up = performMove(
                     node->my_body, node->enemy_body, node->my_body_length,
                     node->enemy_body_length, node->foods, 'u');
+                node->up->parent = node;
                 eval = alphabeta(node->up, depth - 1, alpha, beta, 0);
             } else if (i == 1 && (potential_moves & DOWN)) {
                 node->down = performMove(
                     node->my_body, node->enemy_body, node->my_body_length,
                     node->enemy_body_length, node->foods, 'd');
+                node->down->parent = node;
                 eval = alphabeta(node->down, depth - 1, alpha, beta, 0);
             } else if (i == 2 && (potential_moves & LEFT)) {
                 node->left = performMove(
                     node->my_body, node->enemy_body, node->my_body_length,
                     node->enemy_body_length, node->foods, 'l');
+                node->left->parent = node;
                 eval = alphabeta(node->left, depth - 1, alpha, beta, 0);
             } else if (i == 3 && (potential_moves & RIGHT)) {
                 node->right = performMove(
                     node->my_body, node->enemy_body, node->my_body_length,
                     node->enemy_body_length, node->foods, 'r');
+                node->right->parent = node;
                 eval = alphabeta(node->right, depth - 1, alpha, beta, 0);
+            } else {
+                printf("!depth%d,move%d:行けない\n", depth, i);
+                continue;
             }
+            printf("!depth%d,move%d:評価値 = %d\n", depth, i, eval);
             maxEval = max(maxEval, eval);
             alpha = max(alpha, eval);
             if (beta <= alpha) {
-                break;  // ベータカットオフ
+                printf("===アルファカット===\n");
+                break;  // アルファカットオフ
             }
         }
         return maxEval;
     } else {
         int minEval = INT_MAX;
-        char potential_moves =
-            get_potential_moves(node->enemy_body, node->my_body,
-                                node->enemy_body_length, node->my_body_length);
+        // 敵も同じ条件(自分が動く前)で判断させる
+        char potential_moves = get_potential_moves(
+            node->parent->enemy_body, node->parent->my_body,
+            node->parent->enemy_body_length, node->parent->my_body_length);
         for (int i = 0; i < 4; i++) {
+            printf("===敵の行動:depth=%d,move=%d↓\n", depth, i);
             int eval = INT_MAX;
             if (i == 0 && (potential_moves & UP)) {
                 node->up = performMove(node->enemy_body, node->my_body,
                                        node->enemy_body_length,
                                        node->my_body_length, node->foods, 'u');
+                node->up->parent = node;
                 Node *temp = node->up->my_body;
                 node->up->my_body = node->up->enemy_body;
                 node->up->enemy_body = temp;
-                eval = alphabeta(node->up, depth - 1, alpha, beta, 0);
+                int temp_length = node->up->my_body_length;
+                node->up->my_body_length = node->up->enemy_body_length;
+                node->up->enemy_body_length = temp_length;
+                eval = alphabeta(node->up, depth - 1, alpha, beta, 1);
             } else if (i == 1 && (potential_moves & DOWN)) {
                 node->down = performMove(
                     node->enemy_body, node->my_body, node->enemy_body_length,
                     node->my_body_length, node->foods, 'd');
+                node->down->parent = node;
                 Node *temp = node->down->my_body;
                 node->down->my_body = node->down->enemy_body;
                 node->down->enemy_body = temp;
-                eval = alphabeta(node->down, depth - 1, alpha, beta, 0);
+                int temp_length = node->down->my_body_length;
+                node->down->my_body_length = node->down->enemy_body_length;
+                node->down->enemy_body_length = temp_length;
+                eval = alphabeta(node->down, depth - 1, alpha, beta, 1);
             } else if (i == 2 && (potential_moves & LEFT)) {
                 node->left = performMove(
                     node->enemy_body, node->my_body, node->enemy_body_length,
                     node->my_body_length, node->foods, 'l');
+                node->left->parent = node;
                 Node *temp = node->left->my_body;
                 node->left->my_body = node->left->enemy_body;
                 node->left->enemy_body = temp;
-                eval = alphabeta(node->left, depth - 1, alpha, beta, 0);
+                int temp_length = node->left->my_body_length;
+                node->left->my_body_length = node->left->enemy_body_length;
+                node->left->enemy_body_length = temp_length;
+                eval = alphabeta(node->left, depth - 1, alpha, beta, 1);
             } else if (i == 3 && (potential_moves & RIGHT)) {
                 node->right = performMove(
                     node->enemy_body, node->my_body, node->enemy_body_length,
                     node->my_body_length, node->foods, 'r');
+                node->right->parent = node;
                 Node *temp = node->right->my_body;
                 node->right->my_body = node->right->enemy_body;
                 node->right->enemy_body = temp;
-                eval = alphabeta(node->right, depth - 1, alpha, beta, 0);
+                int temp_length = node->right->my_body_length;
+                node->right->my_body_length = node->right->enemy_body_length;
+                node->right->enemy_body_length = temp_length;
+                eval = alphabeta(node->right, depth - 1, alpha, beta, 1);
+            } else {
+                printf("!depth%d,move%d:行けない\n", depth, i);
+                continue;
             }
+            printf("!depth%d,move%d:評価値 = %d\n", depth, i, eval);
             minEval = min(minEval, eval);
             beta = min(beta, eval);
             if (beta <= alpha) {
+                printf("===ベータカット===\n");
                 break;  // ベータカットオフ
             }
         }
@@ -395,9 +471,10 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
     result->foods = foods;
     result->my_body_length = my_body_length;
     result->enemy_body_length = enemy_body_length;
+    result->parent = NULL;
 
     // アルファベータ法
-    int depth = 3;
+    int depth = 11;  // (注意！)奇数にする！！！
     int alpha = INT_MIN;
     int beta = INT_MAX;
 
@@ -406,31 +483,51 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
 
     char potential_moves = get_potential_moves(
         my_body, enemy_body, my_body_length, enemy_body_length);
-    printf("p:%d\n", potential_moves);
+    if (potential_moves == UP) {
+        printf("上しか行けない\n");
+        return 'u';
+    } else if (potential_moves == DOWN) {
+        printf("下しか行けない\n");
+        return 'd';
+    } else if (potential_moves == LEFT) {
+        printf("左しか行けない\n");
+        return 'l';
+    } else if (potential_moves == RIGHT) {
+        printf("右しか行けない\n");
+        return 'r';
+    }
     for (int i = 0; i < 4; i++) {
         int eval = INT_MIN;
+        printf("=====自分の行動move:%d↓=====\n", i);
         if (i == 0 && (potential_moves & UP)) {
             result->up = performMove(
                 result->my_body, result->enemy_body, result->my_body_length,
                 result->enemy_body_length, result->foods, 'u');
+            result->up->parent = result;
             eval = alphabeta(result->up, depth, alpha, beta, 0);
         } else if (i == 1 && (potential_moves & DOWN)) {
             result->down = performMove(
                 result->my_body, result->enemy_body, result->my_body_length,
                 result->enemy_body_length, result->foods, 'd');
+            result->down->parent = result;
             eval = alphabeta(result->down, depth, alpha, beta, 0);
         } else if (i == 2 && (potential_moves & LEFT)) {
             result->left = performMove(
                 result->my_body, result->enemy_body, result->my_body_length,
                 result->enemy_body_length, result->foods, 'l');
+            result->left->parent = result;
             eval = alphabeta(result->left, depth, alpha, beta, 0);
         } else if (i == 3 && (potential_moves & RIGHT)) {
             result->right = performMove(
                 result->my_body, result->enemy_body, result->my_body_length,
                 result->enemy_body_length, result->foods, 'r');
+            result->right->parent = result;
             eval = alphabeta(result->right, depth, alpha, beta, 0);
+        } else {
+            printf("!!!move%d:行けない\n", i);
+            continue;
         }
-        printf("%d:%d\n", i, eval);
+        printf("!!!move%dの最終的な評価値 = %d\n", i, eval);
         if (eval > maxEval) {
             maxEval = eval;
             if (i == 0) {
