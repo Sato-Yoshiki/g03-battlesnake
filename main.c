@@ -288,7 +288,7 @@ int eval(GameUpdate *state, int depth) {
             state->survivor = 'n';
         }
     }
-    printf("state.survivor%c\n", state->survivor);
+    // printf("state.survivor%c\n", state->survivor);
     int score = 0;
     switch (state->survivor) {
         case 'm':
@@ -341,7 +341,7 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
             get_potential_moves(node->my_body, node->enemy_body,
                                 node->my_body_length, node->enemy_body_length);
         for (int i = 0; i < 4; i++) {
-            printf("===自分の行動:depth=%d,move=%d↓\n", depth, i);
+            // printf("===自分の行動:depth=%d,move=%d↓\n", depth, i);
             int eval = INT_MIN;
             if (i == 0 && (potential_moves & UP)) {
                 node->up = performMove(
@@ -368,14 +368,14 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
                 node->right->parent = node;
                 eval = alphabeta(node->right, depth - 1, alpha, beta, 0);
             } else {
-                printf("!depth%d,move%d:行けない\n", depth, i);
+                // printf("!depth%d,move%d:行けない\n", depth, i);
                 continue;
             }
-            printf("!depth%d,move%d:評価値 = %d\n", depth, i, eval);
+            // printf("!depth%d,move%d:評価値 = %d\n", depth, i, eval);
             maxEval = max(maxEval, eval);
             alpha = max(alpha, eval);
             if (beta <= alpha) {
-                printf("===アルファカット===\n");
+                // printf("===アルファカット===\n");
                 break;  // アルファカットオフ
             }
         }
@@ -387,7 +387,7 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
             node->parent->enemy_body, node->parent->my_body,
             node->parent->enemy_body_length, node->parent->my_body_length);
         for (int i = 0; i < 4; i++) {
-            printf("===敵の行動:depth=%d,move=%d↓\n", depth, i);
+            // printf("===敵の行動:depth=%d,move=%d↓\n", depth, i);
             int eval = INT_MAX;
             if (i == 0 && (potential_moves & UP)) {
                 node->up = performMove(node->enemy_body, node->my_body,
@@ -438,14 +438,14 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
                 node->right->enemy_body_length = temp_length;
                 eval = alphabeta(node->right, depth - 1, alpha, beta, 1);
             } else {
-                printf("!depth%d,move%d:行けない\n", depth, i);
+                // printf("!depth%d,move%d:行けない\n", depth, i);
                 continue;
             }
-            printf("!depth%d,move%d:評価値 = %d\n", depth, i, eval);
+            // printf("!depth%d,move%d:評価値 = %d\n", depth, i, eval);
             minEval = min(minEval, eval);
             beta = min(beta, eval);
             if (beta <= alpha) {
-                printf("===ベータカット===\n");
+                // printf("===ベータカット===\n");
                 break;  // ベータカットオフ
             }
         }
@@ -474,7 +474,7 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
     result->parent = NULL;
 
     // アルファベータ法
-    int depth = 11;  // (注意！)奇数にする！！！
+    int depth = 17;  // (注意！)奇数にする！！！
     int alpha = INT_MIN;
     int beta = INT_MAX;
 
@@ -495,6 +495,10 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
     } else if (potential_moves == RIGHT) {
         printf("右しか行けない\n");
         return 'r';
+    }
+    ///////テスト的に実装
+    if (my_body_length + enemy_body_length < 20) {
+        depth = 17;
     }
     for (int i = 0; i < 4; i++) {
         int eval = INT_MIN;
@@ -524,10 +528,10 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
             result->right->parent = result;
             eval = alphabeta(result->right, depth, alpha, beta, 0);
         } else {
-            printf("!!!move%d:行けない\n", i);
+            printf("=====!!!move%d:行けない\n", i);
             continue;
         }
-        printf("!!!move%dの最終的な評価値 = %d\n", i, eval);
+        printf("=====!!!move%dの最終的な評価値 = %d\n", i, eval);
         if (eval > maxEval) {
             maxEval = eval;
             if (i == 0) {
