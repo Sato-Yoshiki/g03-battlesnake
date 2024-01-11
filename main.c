@@ -77,6 +77,13 @@ struct GameUpdate {
     GameUpdate *parent;
 };
 
+void free_GameUpdate(GameUpdate *node) {
+    free_linked_list(node->my_body);
+    free_linked_list(node->enemy_body);
+    free_linked_list(node->foods);
+    free(node);
+}
+
 void printNodeList(Node *node) {
     while (node != NULL) {
         printf("(%d, %d)\n", node->val.x, node->val.y);
@@ -157,7 +164,7 @@ GameUpdate *performMove(Node *my_body, Node *enemy_body, int my_body_length,
 
     // 各連結リストをディープコピー
     update->my_body = deepCopyLinkedList(my_body);
-    update->enemy_body = enemy_body;
+    update->enemy_body = deepCopyLinkedList(enemy_body);
     update->foods = deepCopyLinkedList(foods);
 
     // 動きを実行する(頭を追加する)
@@ -186,8 +193,15 @@ GameUpdate *performMove(Node *my_body, Node *enemy_body, int my_body_length,
     while (food != NULL) {
         if (food->val.x == update->my_body->val.x &&
             food->val.y == update->my_body->val.y) {
-            food->val.x = -1;
-            food->val.y = -1;  // 存在しない座標を設定=食べたことにする
+            food->val.x -= 11;
+            food->val.y -= 11;  // 存在しない座標を設定=食べたことにする
+            update->my_body_length++;
+            break;
+        } else if (food->val.x + 11 == update->my_body->val.x &&
+                   food->val.y + 11 == update->my_body->val.y &&
+                   update->my_body->val.x == update->enemy_body->val.x &&
+                   update->my_body->val.y == update->enemy_body->val.y) {
+            // 相手が食べたfoodを同時に自分も食べた時
             update->my_body_length++;
             break;
         }
@@ -299,8 +313,10 @@ int eval(GameUpdate *state, int depth) {
             break;
         case 'e':
             score -= 1000;
+            break;
         case 'n':
             score -= 500;
+            break;
         default:
             score = 0;
             break;
@@ -349,24 +365,28 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
                     node->enemy_body_length, node->foods, 'u');
                 node->up->parent = node;
                 eval = alphabeta(node->up, depth - 1, alpha, beta, 0);
+                free_GameUpdate(node->up);
             } else if (i == 1 && (potential_moves & DOWN)) {
                 node->down = performMove(
                     node->my_body, node->enemy_body, node->my_body_length,
                     node->enemy_body_length, node->foods, 'd');
                 node->down->parent = node;
                 eval = alphabeta(node->down, depth - 1, alpha, beta, 0);
+                free_GameUpdate(node->down);
             } else if (i == 2 && (potential_moves & LEFT)) {
                 node->left = performMove(
                     node->my_body, node->enemy_body, node->my_body_length,
                     node->enemy_body_length, node->foods, 'l');
                 node->left->parent = node;
                 eval = alphabeta(node->left, depth - 1, alpha, beta, 0);
+                free_GameUpdate(node->left);
             } else if (i == 3 && (potential_moves & RIGHT)) {
                 node->right = performMove(
                     node->my_body, node->enemy_body, node->my_body_length,
                     node->enemy_body_length, node->foods, 'r');
                 node->right->parent = node;
                 eval = alphabeta(node->right, depth - 1, alpha, beta, 0);
+                free_GameUpdate(node->right);
             } else {
                 // printf("!depth%d,move%d:行けない\n", depth, i);
                 continue;
@@ -401,6 +421,7 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
                 node->up->my_body_length = node->up->enemy_body_length;
                 node->up->enemy_body_length = temp_length;
                 eval = alphabeta(node->up, depth - 1, alpha, beta, 1);
+                free_GameUpdate(node->up);
             } else if (i == 1 && (potential_moves & DOWN)) {
                 node->down = performMove(
                     node->enemy_body, node->my_body, node->enemy_body_length,
@@ -413,6 +434,7 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
                 node->down->my_body_length = node->down->enemy_body_length;
                 node->down->enemy_body_length = temp_length;
                 eval = alphabeta(node->down, depth - 1, alpha, beta, 1);
+                free_GameUpdate(node->down);
             } else if (i == 2 && (potential_moves & LEFT)) {
                 node->left = performMove(
                     node->enemy_body, node->my_body, node->enemy_body_length,
@@ -425,6 +447,7 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
                 node->left->my_body_length = node->left->enemy_body_length;
                 node->left->enemy_body_length = temp_length;
                 eval = alphabeta(node->left, depth - 1, alpha, beta, 1);
+                free_GameUpdate(node->left);
             } else if (i == 3 && (potential_moves & RIGHT)) {
                 node->right = performMove(
                     node->enemy_body, node->my_body, node->enemy_body_length,
@@ -437,6 +460,7 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
                 node->right->my_body_length = node->right->enemy_body_length;
                 node->right->enemy_body_length = temp_length;
                 eval = alphabeta(node->right, depth - 1, alpha, beta, 1);
+                free_GameUpdate(node->right);
             } else {
                 // printf("!depth%d,move%d:行けない\n", depth, i);
                 continue;
@@ -498,7 +522,7 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
     }
     ///////テスト的に実装
     if (my_body_length + enemy_body_length < 20) {
-        depth = 17;
+        // depth = 21;
     }
     for (int i = 0; i < 4; i++) {
         int eval = INT_MIN;
@@ -509,24 +533,28 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
                 result->enemy_body_length, result->foods, 'u');
             result->up->parent = result;
             eval = alphabeta(result->up, depth, alpha, beta, 0);
+            free_GameUpdate(result->up);
         } else if (i == 1 && (potential_moves & DOWN)) {
             result->down = performMove(
                 result->my_body, result->enemy_body, result->my_body_length,
                 result->enemy_body_length, result->foods, 'd');
             result->down->parent = result;
             eval = alphabeta(result->down, depth, alpha, beta, 0);
+            free_GameUpdate(result->down);
         } else if (i == 2 && (potential_moves & LEFT)) {
             result->left = performMove(
                 result->my_body, result->enemy_body, result->my_body_length,
                 result->enemy_body_length, result->foods, 'l');
             result->left->parent = result;
             eval = alphabeta(result->left, depth, alpha, beta, 0);
+            free_GameUpdate(result->left);
         } else if (i == 3 && (potential_moves & RIGHT)) {
             result->right = performMove(
                 result->my_body, result->enemy_body, result->my_body_length,
                 result->enemy_body_length, result->foods, 'r');
             result->right->parent = result;
             eval = alphabeta(result->right, depth, alpha, beta, 0);
+            free_GameUpdate(result->right);
         } else {
             printf("=====!!!move%d:行けない\n", i);
             continue;
@@ -547,14 +575,22 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
         alpha = max(alpha, eval);
     }
 
-    free_linked_list(my_body);
-    free_linked_list(enemy_body);
-    free_linked_list(foods);
+    free_GameUpdate(result);
 
-    // もし有効な動きが見つからなかった場合はランダムな動きを返します。
+    // もし有効な動きが見つからなかった場合はランダムな動き
     if (best_move == '\0') {
+        char moves[4];
+        char next_move = 0;
+        int moves_count = 0;
         srand(time(NULL));
-        char next_move = moves[rand() % 4];
+        if (potential_moves & UP) moves[moves_count++] = 'u';
+        if (potential_moves & DOWN) moves[moves_count++] = 'd';
+        if (potential_moves & LEFT) moves[moves_count++] = 'l';
+        if (potential_moves & RIGHT) moves[moves_count++] = 'r';
+        if (moves_count > 0) {
+            int rand_index = rand() % moves_count;
+            next_move = moves[rand_index];
+        }
         printf("next_move:%c\n", next_move);
         return next_move;
     } else {
