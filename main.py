@@ -4,8 +4,10 @@
 #  //    / /    //   | |     //   / /     //   / /     //          //   / /         ) ) #
 # ((____/ /    //    | |    ((___/ /     ((___/ /     //          ((___/ /    ((___/ /  #
 
+import threading
 import time
 import typing
+import main2
 from ctypes import POINTER, Structure, byref, c_char, c_int, cdll
 
 
@@ -93,24 +95,58 @@ def convert_to_c_types(game_state):
     return game_data, my_snake, enemy_snake
 
 
+def call_lib_move(game_data, my_snake, enemy_snake, result_container, depth):
+    result = lib.move(byref(game_data), byref(my_snake), byref(enemy_snake), depth)
+    result_container.append(result)
+
+
+# 11×11の盤面であることを前提としておりその確認は行わない
 def move(game_state: typing.Dict) -> typing.Dict:
-    # 11×11の盤面であることを前提としておりその確認は行わない
     print(f"==========MOVE {game_state['turn']}: 処理開始==========")
+    before_timeout = game_state["you"]["latency"]
+    print(f"前回latency{before_timeout}")
+    # PythonのデータをCの構造体に変換
     game_data, my_snake, enemy_snake = convert_to_c_types(game_state)
-    next_move = lib.move(byref(game_data), byref(my_snake), byref(enemy_snake))
-    if next_move == b"u":
-        next_move = "up"
-    elif next_move == b"d":
-        next_move = "down"
-    elif next_move == b"r":
-        next_move = "right"
-    elif next_move == b"l":
-        next_move = "left"
+
+    # depth設定（注意：設定できるのは奇数のみ）
+    # 対戦環境では15は安定17は場合による
+    depth = 15
+
+    move_result = []
+    move_thread = threading.Thread(
+        target=call_lib_move,
+        args=(game_data, my_snake, enemy_snake, move_result, depth),
+    )
+    move_thread.start()
+
+    # 並行してPythonでも簡単な処理を行う
+    # start = time.perf_counter()
+    Python_result = main2.move(game_state)
+    next_move = Python_result["move"]
+    # print(time.perf_counter() - start)
+
+    # タイムアウトを秒で設定
+    TIMEOUT_SECONDS = 0.49
+    move_thread.join(TIMEOUT_SECONDS)
+
+    if not move_result:
+        print("タイムアウト: Cの関数が時間内に完了しませんでした。")
     else:
-        print("Cの戻り値エラーが発生")
-        next_move = "up"
-    # デバッグ用遅延　本番では削除！！！！！！！！
-    # time.sleep(0.48)
+        next_move = move_result[0]
+        if next_move == b"u":
+            next_move = "up"
+        elif next_move == b"d":
+            next_move = "down"
+        elif next_move == b"r":
+            next_move = "right"
+        elif next_move == b"l":
+            next_move = "left"
+        else:
+            print("Cの戻り値エラーが発生")
+            next_move = "\0"
+    if next_move == "\0":
+        print("エラー:次の動きがCでもPythonでも取得できませんでした")
+        return {"move": next_move}  # 意図的にヌル文字を送ることで向いている方向へ進ませる
     print(f"MOVE {game_state['turn']}: {next_move}")
     return {"move": next_move}
 
