@@ -305,16 +305,16 @@ int eval(GameUpdate *state, int depth) {
     // printf("state.survivor%c\n", state->survivor);
     int score = 0;
     switch (state->survivor) {
-        case 'm':
+        case 'm':  // 自分だけ生き残る
             score = 1000;
             break;
-        case '2':
+        case '2':  // 二匹とも生存
             score = 0;
             break;
-        case 'e':
+        case 'e':  // 敵だけ生存
             score -= 1000;
             break;
-        case 'n':
+        case 'n':  // 二匹とも死亡
             score -= 500;
             break;
         default:
