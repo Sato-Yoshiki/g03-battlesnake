@@ -1,2 +1,2 @@
 #!/bin/bash
-PORT=8001 python3 main.py
+PORT=8001 python3 maincopy.py
