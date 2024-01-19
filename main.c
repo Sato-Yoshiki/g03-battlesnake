@@ -330,6 +330,25 @@ int eval(GameUpdate *state, int depth) {
         // 負けるのは後の方がいい=depthが深いほどプラス
         score -= depth;
     }
+
+    // 自分の体が盤面の端にあるほどマイナス
+    Node *current = state->my_body;
+    while (current != NULL) {
+        if (current->val.x == 0 || current->val.x == 10 ||
+            current->val.y == 0 || current->val.y == 10) {
+            score -= 30;
+        }
+        current = current->next;
+    }
+    // 敵の体が盤面の端にあるほどプラス
+    current = state->enemy_body;
+    while (current != NULL) {
+        if (current->val.x == 0 || current->val.x == 10 ||
+            current->val.y == 0 || current->val.y == 10) {
+            score += 10;
+        }
+        current = current->next;
+    }
     return score;
 }
 
@@ -477,7 +496,7 @@ int alphabeta(GameUpdate *node, int depth, int alpha, int beta,
     }
 }
 
-char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
+char move(GameData *data, Snake *my_snake, Snake *enemy_snake, int depth) {
     // すべての可能な動きのための配列を連結リストに変換
     Node *my_body = array_to_linked_list(my_snake->body, my_snake->body_length);
     Node *enemy_body =
@@ -498,7 +517,6 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
     result->parent = NULL;
 
     // アルファベータ法
-    int depth = 17;  // (注意！)奇数にする！！！
     int alpha = INT_MIN;
     int beta = INT_MAX;
 
@@ -522,7 +540,7 @@ char move(GameData *data, Snake *my_snake, Snake *enemy_snake) {
     }
     ///////テスト的に実装
     if (my_body_length + enemy_body_length < 20) {
-        // depth = 21;
+        // depth = 15;
     }
     for (int i = 0; i < 4; i++) {
         int eval = INT_MIN;

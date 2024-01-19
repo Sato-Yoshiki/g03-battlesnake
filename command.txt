@@ -1,0 +1,14 @@
+実行
+
+Solo
+.\battlesnake play -W 7 -H 7 --name 'Python Starter Project' --url http://localhost:8000 -g solo --foodSpawnChance 0 --minimumFood 3 --browser
+Duel
+.\battlesnake play -W 11 -H 11 --name 'Python Starter Project' --url http://localhost:8000 --url http://localhost:8000 -g duel --browser
+.\battlesnake play -W 11 -H 11 --name 'Python Starter Project' --url https://g03.pbl-b.repl.co --url https://g01.pbl-b.repl.co -g duel --browser
+
+git開発
+変更したブランチはコミットする必要がある。
+
+"git branch"
+→"git checkout ブランチ"
+→"git pull origin ブランチ"
